@@ -69,6 +69,19 @@ const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/auth/signin",
   },
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',
+      options: {
+        domain: 'skc-pushpendra-jaat-ai-powered-python-tutor.vercel.app',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      },
+    },
+  },
+  
+  
 };
 
 const handler = NextAuth(authOptions);

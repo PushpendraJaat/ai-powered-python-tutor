@@ -114,7 +114,6 @@ const Chat: React.FC = () => {
     if (!userId) return;
 
     // Only run loadChatHistory if userId is available and selectedTutor has changed
-    console.log("useEffect triggered. userId:", userId, "selectedTutor:", selectedTutor.name);
     loadChatHistory();
   }, [selectedTutor, userId]);
 
