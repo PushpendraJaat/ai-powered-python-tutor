@@ -71,7 +71,7 @@ export default function SignUp() {
           password: form.password,
         });
         if (result?.ok) {
-          router.push("/chat");
+          router.push("/");
         } else {
           console.error("Sign in failed after sign up", result);
         }

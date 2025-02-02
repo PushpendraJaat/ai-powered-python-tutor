@@ -20,14 +20,12 @@ export async function GET(req: Request) {
 
   await dbConnect()
   try {
-    console.log("User ID:", userId)
     const progress = await Progress.find({ userId })
     const badges = await Badge.find({ userId })
 
     const overallProgress =
       progress.length > 0 ? progress.reduce((acc, curr) => acc + curr.score, 0) / progress.length : 0
 
-    console.log("User data fetched successfully", { progress, badges })
     return NextResponse.json({
       progress: overallProgress,
       badges: badges,

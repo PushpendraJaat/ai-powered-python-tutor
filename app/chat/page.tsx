@@ -89,11 +89,9 @@ const Chat: React.FC = () => {
       );
   
       const data = await response.json();
-      console.log("API Response:", data);
   
       // Check if the messages exist inside the 'data' object
       if (data && data.data && Array.isArray(data.data.messages)) {
-        console.log("Messages from API:", data.data.messages);
         setMessages((prev) => ({
           ...prev,
           [selectedTutor.name]: data.data.messages,
@@ -168,7 +166,6 @@ const Chat: React.FC = () => {
         ],
        
       }));
-      console.log(messages[selectedTutor.name]);
     } catch (error) {
       console.error("Error fetching response:", error);
       setMessages((prev) => ({
@@ -181,7 +178,6 @@ const Chat: React.FC = () => {
       setIsLoading(false);
     }
   };
-  console.log(messages[selectedTutor.name])
 
   return (
     <motion.div

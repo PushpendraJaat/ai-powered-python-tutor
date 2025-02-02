@@ -9,7 +9,6 @@ export async function POST(req: Request) {
     }
 
     const session = await getServerSession();
-    console.log(session);
     
 
     if (!session ) {
@@ -20,7 +19,6 @@ export async function POST(req: Request) {
     if (!apiKey) {
         return NextResponse.json({ error: "API key is required" }, { status: 400 });
     }
-    console.log(apiKey);
     
 
     try {
@@ -32,7 +30,6 @@ export async function POST(req: Request) {
             { value: apiKey },
             { upsert: true }
         );
-        console.log(result);
         
         if(!result){
             return NextResponse.json({ message: "Error while updating database"}, {status: 400})
