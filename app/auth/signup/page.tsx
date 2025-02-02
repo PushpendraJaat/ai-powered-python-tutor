@@ -14,7 +14,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { LoaderCircle } from "lucide-react";
 import { z } from "zod";
 
 type FormState = z.infer<typeof signupSchema>;
@@ -71,28 +70,25 @@ export default function SignUp() {
           password: form.password,
         });
         if (result?.ok) {
-          setLoading(false)
-          router.push("/chat")
+          // Successful login after signup
+          setLoading(false);
+          router.push("/chat");
         } else {
+          setErrors({ email: "Sign in failed after sign up"+ result?.error });
           console.error("Sign in failed after sign up", result);
         }
       } else {
+        // Sign up failed
+        setLoading(false);
+        setErrors({ email: "Sign up failed. Please try again."+ await response.text() });
         console.error("Sign up failed:", await response.text());
       }
     } catch (error) {
-      console.error("An unexpected error occurred during sign up:", error);
-    } finally {
       setLoading(false);
+      setErrors({ email: "An unexpected error occurred during sign up" });
+      console.error("An unexpected error occurred during sign up:", error);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoaderCircle className="w-10 h-10 text-blue-600 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-400 to-blue-500 p-4">
@@ -145,8 +141,8 @@ export default function SignUp() {
               {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
             </div>
             <CardFooter className="px-0 pt-4">
-              <Button type="submit" className="w-full">
-                Sign Up
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing Up..." : "Sign Up"}
               </Button>
             </CardFooter>
           </form>
