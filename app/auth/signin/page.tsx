@@ -36,19 +36,20 @@ export default function SignIn() {
       })
 
       if (result?.ok) {
-        router.push("/chat")
+        // Wait for the session to be fully set before redirect
+        setLoader(false)
+        router.push("/chat") // Redirect after successful login
       } else {
+        setLoader(false)
         setError(result?.error || "Sign in failed")
         console.error("Sign in failed:", result?.error)
       }
     } catch (error) {
+      setLoader(false)
       console.error("An unexpected error occurred:", error)
       setError("An unexpected error occurred.")
-    } finally {
-      setLoader(false)
     }
   }
-
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-400 to-blue-500 p-4">
@@ -61,7 +62,7 @@ export default function SignIn() {
             <div className="space-y-4">
               {error && (
                 <div className="text-red-500 text-sm">
-                {error}
+                  {error}
                 </div>
               )}
               <div>
