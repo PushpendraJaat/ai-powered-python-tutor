@@ -92,3 +92,7 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.nav-link {
+  @apply text-gray-600 hover:text-gray-900 block py-2 sm:py-0 sm:inline-block;
+}

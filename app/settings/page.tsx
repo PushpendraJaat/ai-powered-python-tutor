@@ -65,7 +65,7 @@ export default function Settings() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-400 to-blue-500 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Settings</CardTitle>
+          <CardTitle>Settings: Use Gemini Api Key</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)}>

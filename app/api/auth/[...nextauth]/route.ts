@@ -15,7 +15,7 @@ const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null;
+          throw new Error("Missing email or password");
         }
 
         await dbConnect();
@@ -23,21 +23,25 @@ const authOptions: NextAuthOptions = {
         try {
           const user = await User.findOne({ email: credentials.email });
           if (!user) {
-            return null;
+            throw new Error("User not found with given email");
           }
 
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
           if (!isPasswordValid) {
-            return null;
+            throw new Error("User password is not valid");
           }
 
-          // Return user data that will be saved in the JWT. Ensure _id is a string.
-          return {
+          const userWithId = {
+            ...user,
             id: user._id.toString(),
             email: user.email,
             name: user.name,
             role: user.role,
           };
+
+          // Return user data that will be saved in the JWT.
+          return userWithId
+
         } catch (error) {
           console.error("Error in auth:", error);
           return null;
@@ -52,7 +56,7 @@ const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token._id = user.id;
+        token.id = user.id;
       }
       return token;
     },
@@ -61,7 +65,7 @@ const authOptions: NextAuthOptions = {
         ...session,
         user: {
           ...session.user,
-          id: token._id,
+          id: token.id,
         }
       };
     }
@@ -73,7 +77,9 @@ const authOptions: NextAuthOptions = {
     sessionToken: {
       name: 'next-auth.session-token',
       options: {
-        domain: 'skc-pushpendra-jaat-ai-powered-python-tutor.vercel.app',
+        domain: process.env.NEXTAUTH_URL?.includes("vercel.app")
+        ? "skc-pushpendra-jaat-ai-powered-python-tutor.vercel.app"
+        : undefined, // No domain for local dev
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
