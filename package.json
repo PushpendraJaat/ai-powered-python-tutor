@@ -47,6 +47,7 @@
     "ai": "latest",
     "autoprefixer": "^10.4.20",
     "bcrypt": "latest",
+    "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
@@ -85,6 +86,7 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
