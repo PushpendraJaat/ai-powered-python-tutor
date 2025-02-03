@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+export { default } from "next-auth/middleware"
 
 export async function middleware(request: NextRequest) {
   // Use the secret from environment variables for token verification.
   const secret = process.env.NEXTAUTH_SECRET;
-  const token = await getToken({ req: request, secret });
+  const token = await getToken({ req: request, secret: secret });
   const { pathname } = request.nextUrl;
 
   // If an authenticated user is trying to access sign-in or sign-up pages, redirect them to /chat.

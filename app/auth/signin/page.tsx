@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { signInSchema } from "@/schemas/signinSchema"
+import { useRouter } from 'next/router'
 
 export default function SignIn() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loader, setLoader] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,7 +38,8 @@ export default function SignIn() {
       if (result?.ok) {
         setLoader(false)
         // Force full page reload to ensure session is loaded
-        window.location.href = "/chat"
+        router.push("/chat")
+
       } else {
         setLoader(false)
         setError(result?.error || "Sign in failed")

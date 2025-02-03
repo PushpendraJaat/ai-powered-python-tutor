@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 import { z } from "zod";
+import { useRouter } from "next/router";
 
 type FormState = z.infer<typeof signupSchema>;
 
@@ -25,6 +26,7 @@ export default function SignUp() {
   });
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [loading, setLoading] = useState<boolean>(false);
+  const router = useRouter()
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -70,8 +72,7 @@ export default function SignUp() {
         if (result?.ok) {
           // Successful login after signup
         setLoading(false)
-        // Force full page reload to ensure session is loaded
-        window.location.href = "/chat"
+        router.push("/chat")
 
         } else {
           setErrors({ email: "Sign in failed after sign up"+ result?.error });
