@@ -1,6 +1,5 @@
 import dbConnect from "@/lib/dbConnect"
 import { Progress, Badge } from "@/models/User"
-import { getServerSession } from "next-auth/next"
 import { NextResponse } from "next/server"
 
 export async function GET(req: Request) {
@@ -12,11 +11,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "User ID is required" }, { status: 400 })
   }
 
-  const session = await getServerSession()
-
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
-  }
 
   await dbConnect()
   try {

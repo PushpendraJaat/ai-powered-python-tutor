@@ -2,7 +2,6 @@
 
 import { useState, ChangeEvent, FormEvent } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { signupSchema } from "@/schemas/signupSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +25,6 @@ export default function SignUp() {
   });
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [loading, setLoading] = useState<boolean>(false);
-  const router = useRouter();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -71,8 +69,10 @@ export default function SignUp() {
         });
         if (result?.ok) {
           // Successful login after signup
-          setLoading(false);
-          router.push("/chat");
+        setLoading(false)
+        // Force full page reload to ensure session is loaded
+        window.location.href = "/chat"
+
         } else {
           setErrors({ email: "Sign in failed after sign up"+ result?.error });
           console.error("Sign in failed after sign up", result);

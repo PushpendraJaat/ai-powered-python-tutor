@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next"
 import dbConnect from "@/lib/dbConnect";
 import Setting from "@/models/Setting";
 
@@ -8,18 +7,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
     }
 
-    const session = await getServerSession();
-    
-
-    if (!session ) {
-        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-    }
-
     const { apiKey } = await req.json();
     if (!apiKey) {
         return NextResponse.json({ error: "API key is required" }, { status: 400 });
     }
-    
 
     try {
         await dbConnect();

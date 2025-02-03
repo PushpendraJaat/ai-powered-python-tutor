@@ -38,7 +38,7 @@ export default function Navigation() {
               <Link href="/api/auth/signout" className="nav-link">Sign Out</Link>
             ) : (
               <>
-                <Link href="/auth/signin" className="nav-link">Sign In</Link>
+                <Link href="/auth/signin" className="nav-link m-10">Sign In</Link>
                 <Link href="/auth/signup" className="nav-link">Sign Up</Link>
               </>
             )}

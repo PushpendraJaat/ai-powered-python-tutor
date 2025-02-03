@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +12,6 @@ export default function SignIn() {
   const [password, setPassword] = useState("")
   const [loader, setLoader] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,9 +34,9 @@ export default function SignIn() {
       })
 
       if (result?.ok) {
-        // Wait for the session to be fully set before redirect
         setLoader(false)
-        router.push("/chat") // Redirect after successful login
+        // Force full page reload to ensure session is loaded
+        window.location.href = "/chat"
       } else {
         setLoader(false)
         setError(result?.error || "Sign in failed")

@@ -4,7 +4,6 @@ import { z } from "zod";
 import dbConnect from "@/lib/dbConnect";
 import Setting from "@/models/Setting";
 import { Message } from "@/models/Messages";
-import { getServerSession } from "next-auth";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { v4 as uuidv4 } from "uuid";
 
@@ -51,16 +50,6 @@ export async function POST(req: Request) {
     const { userId, messages, tutorName, tutorGreeting, tutorStyle } =
       ChatRequestSchema.parse(body);
 
-    // Authentication check: Ensure the userId in the payload matches the authenticated user.
-    const session = await getServerSession();
-    if (!session) {
-      return NextResponse.json(
-        { message: "Unauthorized. Please log in." },
-        { status: 401 }
-      );
-    }
-
-    // --- Save/Update Chat History in DB BEFORE generating a reply
 
     // Save or update the chat history using a findOneAndUpdate operation.
     const saveResult = await Message.findOneAndUpdate(

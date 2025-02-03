@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import dbConnect from "@/lib/dbConnect";
 import { Message } from "@/models/Messages";
 import { z } from "zod";
@@ -27,15 +26,6 @@ export async function GET(request: Request) {
     return NextResponse.json(
       { message: "Too many requests. Please try again later." },
       { status: 429 }
-    );
-  }
-
-
-  const session = await getServerSession();
-  if (!session) {
-    return NextResponse.json(
-      { message: "Unauthorized. Please log in." },
-      { status: 401 }
     );
   }
 
