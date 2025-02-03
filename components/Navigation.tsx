@@ -10,7 +10,7 @@ export default function Navigation() {
   const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
 
-  
+
   // Show a full-page loader if session is loading
   if (status === "loading") {
     return (
@@ -19,7 +19,7 @@ export default function Navigation() {
       </div>
     );
   }
-  
+
   console.log("session nav", session?.user)
 
   return (
@@ -47,14 +47,17 @@ export default function Navigation() {
 
           {/* Auth Links */}
           <div className="hidden sm:flex items-center">
-            {status !== "authenticated" ? null : session ? (
+            {session && (
               <Link href="/api/auth/signout" className="nav-link">Sign Out</Link>
-            ) : (
+            )}
+
+            {!session && (
               <>
                 <Link href="/auth/signin" className="nav-link m-10">Sign In</Link>
                 <Link href="/auth/signup" className="nav-link">Sign Up</Link>
               </>
             )}
+
           </div>
         </div>
       </div>
@@ -65,16 +68,17 @@ export default function Navigation() {
           {session && <Link href="/chat" className="block nav-link" onClick={() => setIsOpen(false)}>Chat</Link>}
           {session && <Link href="/user-data" className="block nav-link" onClick={() => setIsOpen(false)}>User Data</Link>}
           {session && <Link href="/settings" className="block nav-link" onClick={() => setIsOpen(false)}>Settings</Link>}
-          {status === "authenticated" && (
-            session ? (
-              <Link href="/api/auth/signout" className="block nav-link" onClick={() => setIsOpen(false)}>Sign Out</Link>
-            ) : (
-              <>
-                <Link href="/auth/signin" className="block nav-link" onClick={() => setIsOpen(false)}>Sign In</Link>
-                <Link href="/auth/signup" className="block nav-link" onClick={() => setIsOpen(false)}>Sign Up</Link>
-              </>
-            )
+          {session && (
+            <Link href="/api/auth/signout" className="block nav-link" onClick={() => setIsOpen(false)}>Sign Out</Link>
           )}
+
+          {!session && (
+            <>
+              <Link href="/auth/signin" className="block nav-link" onClick={() => setIsOpen(false)}>Sign In</Link>
+              <Link href="/auth/signup" className="block nav-link" onClick={() => setIsOpen(false)}>Sign Up</Link>
+            </>
+          )}
+
         </div>
       )}
     </nav>

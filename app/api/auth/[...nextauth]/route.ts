@@ -18,19 +18,17 @@ const authOptions: NextAuthOptions = {
         }
         await dbConnect();
         try {
-          const user = await User.findOne({ email: credentials.email });
+          const user = await User.findOne({ email: credentials.email }).select("+password");
           if (!user) {
-            throw new Error("user not found");
+            throw new Error("User not found");
           }
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
           if (!isPasswordValid) {
-            throw new Error("password invalid");
+            throw new Error("Password invalid");
           }
-          // Return user data that will be saved in the JWT. Ensure _id is a string.
+          // Return only id in the session
           return {
             id: user._id.toString(),
-            email: user.email,
-            name: user.name,
           };
         } catch (error) {
           console.error("Error in auth:", error);
@@ -46,19 +44,16 @@ const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token._id = user.id;
+        token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token._id,
-        }
+      session.user = {
+        id: token.id as string,
       };
-    }
+      return session;
+    },
   },
   pages: {
     signIn: "/auth/signin",
