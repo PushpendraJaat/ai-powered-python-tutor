@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, FormEvent, ChangeEvent } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -69,6 +68,8 @@ const Chat: React.FC = () => {
   const [selectedTutor, setSelectedTutor] = useState<Tutor>(tutors[0]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const userId = session?.user?.id;
+
+  console.log("userid chat", userId)
 
   // Show a full-page loader if session is loading
   if (status === "loading") {

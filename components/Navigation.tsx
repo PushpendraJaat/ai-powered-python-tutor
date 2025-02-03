@@ -4,10 +4,23 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Menu, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function Navigation() {
   const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
+
+  
+  // Show a full-page loader if session is loading
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-10 h-10 text-white animate-spin" />
+      </div>
+    );
+  }
+  
+  console.log("session nav", session?.user)
 
   return (
     <nav className="bg-white shadow-md">
@@ -34,7 +47,7 @@ export default function Navigation() {
 
           {/* Auth Links */}
           <div className="hidden sm:flex items-center">
-            {status === "loading" ? null : session ? (
+            {status !== "authenticated" ? null : session ? (
               <Link href="/api/auth/signout" className="nav-link">Sign Out</Link>
             ) : (
               <>
@@ -52,7 +65,7 @@ export default function Navigation() {
           {session && <Link href="/chat" className="block nav-link" onClick={() => setIsOpen(false)}>Chat</Link>}
           {session && <Link href="/user-data" className="block nav-link" onClick={() => setIsOpen(false)}>User Data</Link>}
           {session && <Link href="/settings" className="block nav-link" onClick={() => setIsOpen(false)}>Settings</Link>}
-          {status !== "loading" && (
+          {status === "authenticated" && (
             session ? (
               <Link href="/api/auth/signout" className="block nav-link" onClick={() => setIsOpen(false)}>Sign Out</Link>
             ) : (

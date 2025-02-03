@@ -50,6 +50,9 @@ export async function POST(req: Request) {
     const { userId, messages, tutorName, tutorGreeting, tutorStyle } =
       ChatRequestSchema.parse(body);
 
+   
+
+    // --- Save/Update Chat History in DB BEFORE generating a reply
 
     // Save or update the chat history using a findOneAndUpdate operation.
     const saveResult = await Message.findOneAndUpdate(
