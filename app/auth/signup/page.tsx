@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 import { z } from "zod";
-import { useRouter } from "next/router";
+import { useRouter } from 'next/navigation'
 
 type FormState = z.infer<typeof signupSchema>;
 
