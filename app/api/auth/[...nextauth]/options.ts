@@ -7,69 +7,66 @@ import { User } from "@/models/User";
 
 
 export const authOptions: NextAuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Credentials are required");
-        }
+    providers: [
+      CredentialsProvider({
+        name: "Credentials",
+        credentials: {
+          email: { label: "Email", type: "text" },
+          password: { label: "Password", type: "password" },
+        },
 
-        await dbConnect();
-
-        try {
-          const user = await User.findOne({ email: credentials.email }).lean();
-          if (!user) {
-            throw new Error("User not found");
+        async authorize(credentials) {
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error("credentials are required")
           }
 
-          const isPasswordValid = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
-          if (!isPasswordValid) {
-            throw new Error("Invalid password");
-          }
+          await dbConnect();
 
-          // Return normalized user object
-          return {
-            id: user._id.toString(), // Convert ObjectId to string
-            email: user.email,
-            name: user.name
-          };
-        } catch (error) {
-          console.error("Authentication error:", error);
-          return null;
-        }
-      },
-    }),
-  ],
-  session: {
-    strategy: "jwt",
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id; // Store string ID in token
-      }
-      return token;
+          try {
+            const user = await User.findOne({ email: credentials.email });
+            console.log(user)
+            if (!user) {
+              throw new Error("user not found")
+            }
+
+            const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+
+            if (!isPasswordValid) {
+              throw new Error("invalid password")
+            }
+            // Return user data that will be saved in the JWT.
+            return user;
+            
+          } catch (error) {
+            console.error("Error in auth:", error);
+            return null;
+          }
+        },
+      }),
+    ],
+
+    session: {
+      strategy: "jwt",
     },
-    async session({ session, token }) {
-      if (token?.id) {
-        session.user = {
-          ...session.user,
-          id: token.id, // Ensure ID is properly set
-        };
+
+    secret: process.env.NEXTAUTH_SECRET,
+
+    callbacks: {
+      async jwt({ token, user }) {
+        if (user) {
+          token.id = user._id;
+        }
+        return token;
+      },
+      
+      async session({ session, token }) {
+        if (session.user) {
+          session.user.id = token.id;
+        }
+        return session;
       }
-      return session;
-    }
-  },
-  pages: {
-    signIn: "/auth/signin",
-  },
-};
+    },
+    pages: {
+      signIn: "/auth/signin",
+    },
+  };
