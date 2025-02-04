@@ -20,11 +20,12 @@ export const authOptions: NextAuthOptions = {
             throw new Error("credentials are required")
           }
 
-          await dbConnect();
 
           try {
+            await dbConnect();
+
             const user = await User.findOne({ email: credentials.email });
-            console.log(user)
+          
             if (!user) {
               throw new Error("user not found")
             }
@@ -35,11 +36,15 @@ export const authOptions: NextAuthOptions = {
               throw new Error("invalid password")
             }
             // Return user data that will be saved in the JWT.
-            return user;
+            return {
+              id: user._id.toString(),
+              email: user.email,
+              name: user.name
+            };
             
           } catch (error) {
             console.error("Error in auth:", error);
-            return null;
+            throw error
           }
         },
       }),
@@ -47,6 +52,7 @@ export const authOptions: NextAuthOptions = {
 
     session: {
       strategy: "jwt",
+      maxAge: 30 * 24 * 60 * 60
     },
 
     secret: process.env.NEXTAUTH_SECRET,
@@ -54,19 +60,20 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
       async jwt({ token, user }) {
         if (user) {
-          token.id = user._id;
+          token.id = user.id;
         }
         return token;
       },
       
       async session({ session, token }) {
         if (session.user) {
-          session.user.id = token.id;
+          session.user.id = token.id as string;
         }
         return session;
       }
     },
     pages: {
       signIn: "/auth/signin",
+      error: "/auth.signin"
     },
   };
