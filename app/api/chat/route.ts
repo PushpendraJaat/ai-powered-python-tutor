@@ -6,6 +6,8 @@ import Setting from "@/models/Setting";
 import { Message } from "@/models/Messages";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { v4 as uuidv4 } from "uuid";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 
 // --- Request validation schemas
 
@@ -31,6 +33,14 @@ const rateLimiter = new RateLimiterMemory({
 // --- Main API handler
 
 export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+
+  }
   try {
     await dbConnect();
 

@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/dbConnect";
 import Setting from "@/models/Setting";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 
 export async function POST(req: Request) {
+    const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+
+  }
+  
     if (req.method !== "POST") {
         return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
     }

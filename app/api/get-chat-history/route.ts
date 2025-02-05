@@ -3,7 +3,8 @@ import dbConnect from "@/lib/dbConnect";
 import { Message } from "@/models/Messages";
 import { z } from "zod";
 import { RateLimiterMemory } from "rate-limiter-flexible";
-
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 
 
 const querySchema = z.object({
@@ -17,6 +18,14 @@ const rateLimiter = new RateLimiterMemory({
 });
 
 export async function GET(request: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+    }
+    
   await dbConnect(); // Ensure DB is connected
 
   const clientIP = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";

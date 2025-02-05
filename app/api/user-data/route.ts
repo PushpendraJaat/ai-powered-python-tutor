@@ -1,8 +1,18 @@
 import dbConnect from "@/lib/dbConnect"
 import { Progress, Badge } from "@/models/User"
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 
 export async function GET(req: Request) {
+  const session = await getServerSession(authOptions);
+  
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+      });
+  
+    }
   // Extract userId from query parameters
   const url = new URL(req.url)
   const userId = url.searchParams.get("userId")
