@@ -1,8 +1,9 @@
+"use client"
+
 import "./globals.css"
 import { Inter } from "next/font/google"
 import type React from "react"
-import { getServerSession } from "next-auth/next"
-import { SessionProvider } from "@/components/SessionProvider"
+import { SessionProvider } from "next-auth/react";
 import Navigation from "@/components/Navigation"
 import { Toaster } from "@/components/ui/toaster"
 
@@ -18,12 +19,11 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await getServerSession()
 
   return (
     <html lang="en">
       <body className={inter.className}>
-        <SessionProvider session={session}>
+      <SessionProvider>
         <Navigation />
         <Toaster />
           {children}
