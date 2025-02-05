@@ -39,7 +39,8 @@ export const authOptions: NextAuthOptions = {
             return {
               id: user._id.toString(),
               email: user.email,
-              name: user.name
+              name: user.name,
+              status: user.status
             };
             
           } catch (error) {
@@ -61,7 +62,9 @@ export const authOptions: NextAuthOptions = {
       async jwt({ token, user }) {
         if (user) {
           token.id = user.id;
-          token.status = user.status;
+          if ('status' in user) {
+            token.status = user?.status;
+          }
         }
         return token;
       },
@@ -69,7 +72,7 @@ export const authOptions: NextAuthOptions = {
       async session({ session, token }) {
         if (session.user) {
           session.user.id = token.id as string;
-          session.user.status = token.status;
+          session.user.status = token.status as string;
         }
         return session;
       }
