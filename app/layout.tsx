@@ -9,10 +9,7 @@ import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata = {
-  title: "AI-Powered Python Tutor for Kids",
-  description: "Learn Python with fun, interactive lessons and a friendly AI tutor!",
-}
+
 
 export default async function RootLayout({
   children,
