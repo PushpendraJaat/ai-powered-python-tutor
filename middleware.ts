@@ -1,34 +1,35 @@
-import withAuth from "next-auth/middleware"
-import { NextResponse } from "next/server"
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
 
 export default withAuth(
-  function middleware(){
-    return NextResponse.next()
+  function middleware(req) {
+    return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({token, req}) => {
-        const { pathname } = req.nextUrl;
+      authorized: ({ token, req }) => {
+        const pathname = req.nextUrl.pathname;
 
-        //allow path
-        if( pathname.startsWith("/api/auth") || pathname === "/auth/signin" || pathname === "/auth/signup")
-          {
-          return true
+        // Public routes that don't require authentication
+        const publicRoutes = ["/auth/signin", "/auth/signup"];
+        if (pathname.startsWith("/api/auth") || publicRoutes.includes(pathname)) {
+          return true;
         }
 
-        //
-        if(pathname === "/"){
-          return true
+        // Allow homepage access
+        if (pathname === "/") {
+          return true;
         }
-        //
-        return !!token
-      }
-    }
+
+        // Require authentication for all other routes
+        return !!token;
+      },
+    },
   }
-)
+);
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)'
-  ]
-}
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
+  ],
+};
