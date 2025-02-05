@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,11 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { apiKeySchema } from "@/schemas/apiKey";
+import { Loader2 } from "lucide-react";
 
 
 
 export default function Settings() {
   const [loading, setLoading] = useState(false);
+  const { data: session, status } = useSession();
 
   // React Hook Form with Zod
   const {
@@ -60,6 +63,15 @@ export default function Settings() {
       setLoading(false);
     }
   };
+
+  // Show a full-page loader if session is loading
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-10 h-10 text-white animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-400 to-blue-500 p-4">
