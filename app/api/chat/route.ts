@@ -9,9 +9,8 @@ import { v4 as uuidv4 } from "uuid";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
 
-// ----------------------
-// Request validation schemas
-// ----------------------
+// --- Request validation schemas
+
 const MessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
   content: z.string(),
@@ -25,65 +24,52 @@ const ChatRequestSchema = z.object({
   tutorStyle: z.string().default(""),
 });
 
-// ----------------------
-// Rate limiter configuration 
-// ----------------------
+// ---Rate limiter configuration 
 const rateLimiter = new RateLimiterMemory({
-  points: 10, // 10 requests per duration
-  duration: 60, // 60 seconds
+  points: 10,
+  duration: 60,
 });
 
-// ----------------------
-// Caching Gemini API Key
-// ----------------------
-let cachedGeminiAPIKey: string | null = null;
-async function getGeminiAPIKey(): Promise<string> {
-  if (cachedGeminiAPIKey) return cachedGeminiAPIKey;
-  const GeminiAPI = await Setting.findOne({ key: "gemini_api_key" });
-  if (!GeminiAPI || !GeminiAPI.value) {
-    throw new Error("Gemini API key not found");
-  }
-  cachedGeminiAPIKey = GeminiAPI.value;
-  return cachedGeminiAPIKey as string;
-}
+// --- Main API handler
 
-// ----------------------
-// Main API handler
-// ----------------------
 export async function POST(req: Request) {
-  // Check authentication
   const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
 
+  if (!session) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+
+  }
   try {
-    // Ensure DB connection is established (with pooling/reuse)
     await dbConnect();
 
-    // Start reading the JSON body and perform rate limiting concurrently.
+    // (Optional) Rate limiting check:
     const clientIP = req.headers.get("x-forwarded-for") || "unknown";
-    const bodyPromise = req.json();
-    const rateLimitPromise = rateLimiter.consume(clientIP).catch(() => null);
-
-    const rateLimitResult = await rateLimitPromise;
-    if (!rateLimitResult) {
+    try {
+      await rateLimiter.consume(clientIP);
+    } catch {
       return NextResponse.json(
         { message: "Too many requests. Please try again later." },
         { status: 429 }
       );
     }
 
-    // Parse and validate the request body
-    const body = await bodyPromise;
+    // Validate and parse the request body
+    const body = await req.json();
     const { userId, messages, tutorName, tutorGreeting, tutorStyle } =
       ChatRequestSchema.parse(body);
 
-    // ----------------------
-    // Save/Update Chat History in DB BEFORE generating a reply
-    // ----------------------
+   
+
+    // --- Save/Update Chat History in DB BEFORE generating a reply
+
+    // Save or update the chat history using a findOneAndUpdate operation.
     const saveResult = await Message.findOneAndUpdate(
-      { userId, tutorName },
+      {
+        userId,
+        tutorName,
+      },
       {
         $set: {
           messages,
@@ -99,23 +85,32 @@ export async function POST(req: Request) {
       }
     );
 
-    if (!saveResult) {
+    
+
+    if (
+      !saveResult
+    ) {
       return NextResponse.json(
-        { error: "Failed to create or update chat history" },
+        { message: "Failed to create new chat history" },
         { status: 500 }
       );
     }
 
-    // ----------------------
-    // Generate Assistant Reply Using Google Generative AI
-    // ----------------------
-    // Retrieve the Gemini API key from cache or DB
-    const geminiApiKey = await getGeminiAPIKey();
+    // --- Generate Assistant Reply Using Google Generative AI
 
-    const genAI = new GoogleGenerativeAI(geminiApiKey);
+    // Fetch the Gemini API key from your Settings
+    const GeminiAPI = await Setting.findOne({ key: "gemini_api_key" });
+    if (!GeminiAPI || !GeminiAPI.value) {
+      return NextResponse.json(
+        { error: "Gemini API key not found" },
+        { status: 500 }
+      );
+    }
+
+    const genAI = new GoogleGenerativeAI(GeminiAPI.value);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Ensure the conversation starts with a user message.
+    // Ensure that the conversation starts with a user message.
     const validHistory =
       messages.length > 0 && messages[0].role !== "user"
         ? messages.slice(1)
@@ -133,24 +128,21 @@ export async function POST(req: Request) {
 
     // Compose teacher instructions to guide the assistant
     const teacherInstructions = `
-ROLE: ${tutorName}
-GREETING: ${tutorGreeting}
-STYLE: ${tutorStyle}
-TASK: Teach Python to children using simple language, fun examples, and engaging explanations.
-RESPONSE FORMAT:
-- For correct answers: Include "That's correct!" and add 3 emojis
-- For code challenges: Use format "CHALLENGE:[task description]\nEXPECTED OUTPUT:[expected result]"
-`;
+      ROLE: ${tutorName}
+      GREETING: ${tutorGreeting}
+      STYLE: ${tutorStyle}
+      TASK: Teach Python to children using simple language, fun examples, and engaging explanations.
+      RESPONSE FORMAT:
+      - For correct answers: Include "That's correct!" and add 3 emojis
+      - For code challenges: Use format "CHALLENGE:[task description]\nEXPECTED OUTPUT:[expected result]"
+    `;
 
-    // Map history into the format expected by the generative model
-    const chatHistory = validHistory.map((m) => ({
-      role: m.role === "user" ? "user" : "model",
-      parts: [{ text: m.content }],
-    }));
-
-    // Start a chat session with the provided history and configuration
+    // Start a chat session with the provided history
     const chat = model.startChat({
-      history: chatHistory,
+      history: validHistory.map((m) => ({
+        role: m.role === "user" ? "user" : "model",
+        parts: [{ text: m.content }],
+      })),
       generationConfig: {
         maxOutputTokens: 1000,
         temperature: 0.5,
@@ -158,21 +150,10 @@ RESPONSE FORMAT:
     });
 
     // Send the concatenated instructions and last user message
-    let responseText: string;
-    try {
-      const result = await chat.sendMessage(teacherInstructions + lastUserMessage);
-      responseText = (await result.response.text()).trim();
-    } catch (apiError) {
-      console.error("Error from Generative AI:", apiError);
-      return NextResponse.json(
-        { error: "Error generating assistant reply" },
-        { status: 500 }
-      );
-    }
+    const result = await chat.sendMessage(teacherInstructions + lastUserMessage);
+    const responseText = (await result.response.text()).trim();
 
-    // ----------------------
-    // Process the response for any special triggers
-    // ----------------------
+    // Process the response for any special triggers (e.g. correctness, code challenges)
     const responseData: {
       content: string;
       correct?: boolean;
@@ -187,13 +168,11 @@ RESPONSE FORMAT:
     if (challengeMatch) {
       responseData.challenge = challengeMatch[1].trim();
       responseData.expectedOutput = challengeMatch[2].trim();
-      // Remove challenge details from the content if present
       responseData.content = responseText.replace(/CHALLENGE:.*$/s, "").trim();
     }
 
-    // ----------------------
-    // Update Chat History in DB with the Assistant's Reply
-    // ----------------------
+    // --- Update Chat History in DB with the Assistant's Reply
+
     const updatedMessages = [
       ...messages,
       { role: "assistant", content: responseData.content, id: uuidv4() },
