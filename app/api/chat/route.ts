@@ -24,31 +24,31 @@ const ChatRequestSchema = z.object({
   tutorStyle: z.string().default(""),
 });
 
-// ---Rate limiter configuration 
+// --- Rate limiter configuration 
 const rateLimiter = new RateLimiterMemory({
-  points: 10,
-  duration: 60,
+  points: 10, // 10 requests
+  duration: 60, // per 60 seconds
 });
 
 // --- Main API handler
 
 export async function POST(req: Request) {
+  // Check authentication
   const session = await getServerSession(authOptions);
-
   if (!session) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-    });
-
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
   try {
+    // Connect to DB
     await dbConnect();
 
-    // (Optional) Rate limiting check:
+    // Rate limiting based on IP (falling back to "unknown" if header is missing)
     const clientIP = req.headers.get("x-forwarded-for") || "unknown";
     try {
       await rateLimiter.consume(clientIP);
-    } catch {
+    } catch (rlError) {
+      console.error("Rate limiter error:", rlError);
       return NextResponse.json(
         { message: "Too many requests. Please try again later." },
         { status: 429 }
@@ -60,16 +60,9 @@ export async function POST(req: Request) {
     const { userId, messages, tutorName, tutorGreeting, tutorStyle } =
       ChatRequestSchema.parse(body);
 
-   
-
     // --- Save/Update Chat History in DB BEFORE generating a reply
-
-    // Save or update the chat history using a findOneAndUpdate operation.
     const saveResult = await Message.findOneAndUpdate(
-      {
-        userId,
-        tutorName,
-      },
+      { userId, tutorName },
       {
         $set: {
           messages,
@@ -85,20 +78,16 @@ export async function POST(req: Request) {
       }
     );
 
-    
-
-    if (
-      !saveResult
-    ) {
+    if (!saveResult) {
       return NextResponse.json(
-        { message: "Failed to create new chat history" },
+        { message: "Failed to create or update chat history" },
         { status: 500 }
       );
     }
 
     // --- Generate Assistant Reply Using Google Generative AI
 
-    // Fetch the Gemini API key from your Settings
+    // Fetch the Gemini API key from Settings
     const GeminiAPI = await Setting.findOne({ key: "gemini_api_key" });
     if (!GeminiAPI || !GeminiAPI.value) {
       return NextResponse.json(
@@ -107,10 +96,11 @@ export async function POST(req: Request) {
       );
     }
 
+    // Initialize the Generative AI model
     const genAI = new GoogleGenerativeAI(GeminiAPI.value);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Ensure that the conversation starts with a user message.
+    // Ensure the conversation starts with a user message.
     const validHistory =
       messages.length > 0 && messages[0].role !== "user"
         ? messages.slice(1)
@@ -128,14 +118,14 @@ export async function POST(req: Request) {
 
     // Compose teacher instructions to guide the assistant
     const teacherInstructions = `
-      ROLE: ${tutorName}
-      GREETING: ${tutorGreeting}
-      STYLE: ${tutorStyle}
-      TASK: Teach Python to children using simple language, fun examples, and engaging explanations.
-      RESPONSE FORMAT:
-      - For correct answers: Include "That's correct!" and add 3 emojis
-      - For code challenges: Use format "CHALLENGE:[task description]\nEXPECTED OUTPUT:[expected result]"
-    `;
+ROLE: ${tutorName}
+GREETING: ${tutorGreeting}
+STYLE: ${tutorStyle}
+TASK: Teach Python to children using simple language, fun examples, and engaging explanations.
+RESPONSE FORMAT:
+- For correct answers: Include "That's correct!" and add 3 emojis
+- For code challenges: Use format "CHALLENGE:[task description]\nEXPECTED OUTPUT:[expected result]"
+`;
 
     // Start a chat session with the provided history
     const chat = model.startChat({
@@ -150,8 +140,17 @@ export async function POST(req: Request) {
     });
 
     // Send the concatenated instructions and last user message
-    const result = await chat.sendMessage(teacherInstructions + lastUserMessage);
-    const responseText = (await result.response.text()).trim();
+    let responseText: string;
+    try {
+      const result = await chat.sendMessage(teacherInstructions + lastUserMessage);
+      responseText = (await result.response.text()).trim();
+    } catch (apiError) {
+      console.error("Error from Generative AI:", apiError);
+      return NextResponse.json(
+        { error: "Error generating assistant reply" },
+        { status: 500 }
+      );
+    }
 
     // Process the response for any special triggers (e.g. correctness, code challenges)
     const responseData: {
@@ -168,11 +167,11 @@ export async function POST(req: Request) {
     if (challengeMatch) {
       responseData.challenge = challengeMatch[1].trim();
       responseData.expectedOutput = challengeMatch[2].trim();
+      // Remove challenge details from content if present
       responseData.content = responseText.replace(/CHALLENGE:.*$/s, "").trim();
     }
 
     // --- Update Chat History in DB with the Assistant's Reply
-
     const updatedMessages = [
       ...messages,
       { role: "assistant", content: responseData.content, id: uuidv4() },
