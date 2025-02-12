@@ -9,8 +9,6 @@ export default function Navigation() {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
 
-  console.log("session nav", session?.user)
-
   return (
     <nav className="bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

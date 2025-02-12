@@ -69,8 +69,6 @@ const Chat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const userId = session?.user?.id;
 
-  console.log("userid chat", userId)
-
   // Show a full-page loader if session is loading
   if (status === "loading") {
     return (
